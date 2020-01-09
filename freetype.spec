@@ -9,7 +9,7 @@
 Summary: A free and portable font rendering engine
 Name: freetype
 Version: 2.3.11
-Release: 6%{?dist}.9
+Release: 14%{?dist}.1
 License: FTL or GPLv2+
 Group: System Environment/Libraries
 URL: http://www.freetype.org
@@ -62,6 +62,7 @@ Patch117:  freetype-2.3.11-CVE-2012-1143.patch
 Patch118:  freetype-2.3.11-CVE-2012-1144.patch
 Patch119:  freetype-2.3.11-bdf-overflow.patch
 Patch120:  freetype-2.3.11-array-initialization.patch
+Patch121:  freetype-2.3.11-CVE-2012-5669.patch
 
 Buildroot: %{_tmppath}/%{name}-%{version}-root-%(%{__id_u} -n)
 
@@ -162,6 +163,7 @@ popd
 %patch118 -p1 -b .CVE-2012-1144
 %patch119 -p1 -b .bdf-overflow
 %patch120 -p1 -b .array-initialization
+%patch121 -p1 -b .CVE-2012-5669
 
 %build
 
@@ -291,49 +293,54 @@ rm -rf $RPM_BUILD_ROOT
 %doc docs/tutorial
 
 %changelog
-* Tue Apr  3 2012 Marek Kasik <mkasik@redhat.com> 2.3.11-6.el6_2.9
+* Thu Jan 24 2013 Marek Kasik <mkasik@redhat.com> 2.3.11-14.el6_3.1
+- Fix CVE-2012-5669
+    (Use correct array size for checking `glyph_enc')
+- Resolves: #903542
+
+* Thu Jul 19 2012 Marek Kasik <mkasik@redhat.com> 2.3.11-14
+- A little change in configure part
+- Related: #723468
+
+* Tue Apr  3 2012 Marek Kasik <mkasik@redhat.com> 2.3.11-13
 - Fix CVE-2012-{1126, 1127, 1130, 1131, 1132, 1134, 1136,
   1137, 1139, 1140, 1141, 1142, 1143, 1144}
 - Properly initialize array "result" in
   FT_Outline_Get_Orientation()
 - Check bytes per row for overflow in _bdf_parse_glyphs()
-- Resolves: #806268
+- Resolves: #806269
 
-* Tue Nov 15 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-6.el6_1.8
+* Tue Nov 15 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-12
 - Add freetype-2.3.11-CVE-2011-3439.patch
     (Various loading fixes.)
-- Resolves: #754011
+- Resolves: #754012
 
-* Fri Oct 21 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-6.el6_1.7
+* Fri Oct 21 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-11
 - Add freetype-2.3.11-CVE-2011-3256.patch
     (Handle some border cases.)
-- Resolves: #747083
+- Resolves: #747084
 
-* Wed Jul 20 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-6.el6_1.6
-- A little change in configure part
-- Resolves: #723467
-
-* Wed Jul 20 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-6.el6_1.5
+* Wed Jul 20 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-10
 - Use -fno-strict-aliasing instead of __attribute__((__may_alias__))
-- Resolves: #723467
+- Resolves: #723468
 
-* Wed Jul 20 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-6.el6_1.4
+* Wed Jul 20 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-9
 - Allow FT_Glyph to alias (to pass Rpmdiff)
-- Resolves: #723467
+- Resolves: #723468
 
-* Wed Jul 20 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-6.el6_1.3
+* Wed Jul 20 2011 Marek Kasik <mkasik@redhat.com> 2.3.11-8
 - Add freetype-2.3.11-CVE-2011-0226.patch
     (Add better argument check for `callothersubr'.)
     - based on patches by Werner Lemberg,
       Alexei Podtelezhnikov and Matthias Drochner
-- Resolves: #723467
+- Resolves: #723468
 
-* Wed Nov 10 2010 Marek Kasik <mkasik@redhat.com> 2.3.11-6.el6_0.2
+* Wed Nov 10 2010 Marek Kasik <mkasik@redhat.com> 2.3.11-7
 - Add freetype-2.3.11-CVE-2010-3855.patch
     (Protect against invalid `runcnt' values.)
-- Resolves: #651761
+- Resolves: #651762
 
-* Thu Sep 30 2010 Marek Kasik <mkasik@redhat.com> 2.3.11-6.el6_0.1
+* Thu Sep 30 2010 Marek Kasik <mkasik@redhat.com> 2.3.11-6
 - Add freetype-2.3.11-CVE-2010-2805.patch
     (Fix comparison.)
 - Add freetype-2.3.11-CVE-2010-2806.patch
@@ -342,7 +349,7 @@ rm -rf $RPM_BUILD_ROOT
     (Check the total length of collected POST segments.)
 - Add freetype-2.3.11-CVE-2010-3311.patch
     (Don't seek behind end of stream.)
-- Resolves: #638838
+- Resolves: #638839
 
 * Wed Aug 11 2010 Marek Kasik <mkasik@redhat.com> 2.3.11-5
 - Add freetype-2.3.11-CVE-2010-1797.patch
