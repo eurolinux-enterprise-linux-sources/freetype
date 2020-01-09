@@ -9,7 +9,7 @@
 Summary: A free and portable font rendering engine
 Name: freetype
 Version: 2.3.11
-Release: 17%{?dist}
+Release: 19%{?dist}
 License: FTL or GPLv2+
 Group: System Environment/Libraries
 URL: http://www.freetype.org
@@ -88,6 +88,12 @@ Patch141:  freetype-2.3.11-pcf-read-b.patch
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1154625
 Patch142:  freetype-2.3.11-fix-buffer-size.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1752788
+Patch143:  freetype-2.3.11-type1-buffer-overflow.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1763609
+Patch144:  freetype-2.3.11-psaux-buffer-overflow.patch
 
 Buildroot: %{_tmppath}/%{name}-%{version}-root-%(%{__id_u} -n)
 
@@ -211,6 +217,8 @@ popd
 %patch140 -p1 -b .pvf-read-a
 %patch141 -p1 -b .pvf-read-b
 %patch142 -p1 -b .fix-buffer-size
+%patch143 -p1 -b .type1-buffer-overflow
+%patch144 -p1 -b .psaux-buffer-overflow
 
 %build
 
@@ -340,6 +348,14 @@ rm -rf $RPM_BUILD_ROOT
 %doc docs/tutorial
 
 %changelog
+* Wed Dec 4 2019 Marek Kasik <mkasik@redhat.com> - 2.3.11-19
+- Fix potential buffer overflow
+- Resolves: #1767863
+
+* Tue Nov 26 2019 Marek Kasik <mkasik@redhat.com> - 2.3.11-18
+- Fix potential buffer overflow
+- Resolves: #1758402
+
 * Tue Dec 15 2015 Felipe Borges <feborges@redhat.com> - 2.3.11-17
 - Fix computation of size of rasterization buffer
 - Resolves: #1154625

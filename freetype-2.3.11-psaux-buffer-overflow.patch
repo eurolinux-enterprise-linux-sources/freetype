@@ -1,0 +1,12 @@
+--- a/src/psaux/psobjs.c
++++ b/src/psaux/psobjs.c
+@@ -600,6 +600,9 @@
+       error = PSaux_Err_Invalid_File_Format;
+     }
+ 
++    if ( cur > limit )
++      cur = limit;
++
+     parser->error  = error;
+     parser->cursor = cur;
+   }
