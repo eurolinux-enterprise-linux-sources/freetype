@@ -7,7 +7,7 @@
 Summary: A free and portable font rendering engine
 Name: freetype
 Version: 2.4.11
-Release: 12%{?dist}
+Release: 15%{?dist}
 License: (FTL or GPLv2+) and BSD and MIT and Public Domain and zlib with acknowledgement
 Group: System Environment/Libraries
 URL: http://www.freetype.org
@@ -54,6 +54,12 @@ Patch108:  freetype-2.4.11-CVE-2014-9674b.patch
 Patch109:  freetype-2.4.11-pcf-read-a.patch
 Patch110:  freetype-2.4.11-pcf-read-b.patch
 Patch111:  freetype-2.4.11-inode-overflow.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1368141
+Patch112:  freetype-2.4.11-libtool.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1381678
+Patch113:  freetype-2.4.11-signed.patch
 
 Buildroot: %{_tmppath}/%{name}-%{version}-root-%(%{__id_u} -n)
 
@@ -138,6 +144,8 @@ popd
 %patch109 -p1 -b .pcf-read-a
 %patch110 -p1 -b .pcf-read-b
 %patch111 -p1 -b .inode-overflow
+%patch112 -p1 -b .libtool
+%patch113 -p1 -b .signed
 
 %build
 
@@ -255,6 +263,18 @@ rm -rf $RPM_BUILD_ROOT
 %doc docs/tutorial
 
 %changelog
+* Mon Feb 20 2017 Marek Kasik <mkasik@redhat.com> - 2.4.11-15
+- Fix shellcheck warning (coverity)
+- Related: #1368141
+
+* Mon Feb 20 2017 Marek Kasik <mkasik@redhat.com> - 2.4.11-14
+- Backport functions for reading signed values from stream
+- Resolves: #1381678
+
+* Fri Feb 17 2017 Marek Kasik <mkasik@redhat.com> - 2.4.11-13
+- Don't show path of non-existing libtool file
+- Resolves: #1368141
+
 * Tue Mar 22 2016 Marek Kasik <mkasik@redhat.com> - 2.4.11-12
 - Define _FILE_OFFSET_BITS=64 to handle inodes higher than or equal to 2^31
 - Resolves: #1303268
