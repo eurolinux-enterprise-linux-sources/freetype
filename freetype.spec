@@ -7,7 +7,7 @@
 Summary: A free and portable font rendering engine
 Name: freetype
 Version: 2.8
-Release: 12%{?dist}.1
+Release: 14%{?dist}
 License: (FTL or GPLv2+) and BSD and MIT and Public Domain and zlib with acknowledgement
 Group: System Environment/Libraries
 URL: http://www.freetype.org
@@ -45,6 +45,10 @@ Patch9:  freetype-2.8-getvariation.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1576504
 Patch10:  freetype-2.8-2.4.11-API.patch
 Patch11:  freetype-2.8-avar-table-load.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1657479
+Patch12:  freetype-2.8-bw-rendering.patch
+Patch13:  freetype-2.8-bw-hinting.patch
 
 BuildRequires: libX11-devel
 BuildRequires: libpng-devel
@@ -113,6 +117,8 @@ popd
 %patch9 -p1 -b .getvariation
 %patch10 -p1 -b .2.4.11-api
 %patch11 -p1 -b .avar-table-load
+%patch12 -p1 -b .bw-rendering
+%patch13 -p1 -b .bw-hinting
 
 %build
 
@@ -228,9 +234,13 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/*.{a,la}
 %{_mandir}/man1/*
 
 %changelog
-* Thu Nov 22 2018 Marek Kasik <mkasik@redhat.com> - 2.8-12.el7_6.1
+* Mon Mar 11 2019 Marek Kasik <mkasik@redhat.com> - 2.8-14
+- Fix rendering in monochrome mode
+- Resolves: #1657479
+
+* Tue Nov 13 2018 Marek Kasik <mkasik@redhat.com> - 2.8-13
 - Fix definition of constant ft_encoding_gb2312 in freetype.h
-- Resolves: #1652187
+- Resolves: #1645218
 
 * Fri Jun 08 2018 Marek Kasik <mkasik@redhat.com> - 2.8-12
 - Fix loading of avar tables
