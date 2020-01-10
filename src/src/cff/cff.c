@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    FreeType OpenType driver component (body only).                      */
 /*                                                                         */
-/*  Copyright 1996-2017 by                                                 */
+/*  Copyright 1996-2001, 2002 by                                           */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -17,25 +17,14 @@
 
 
 #define FT_MAKE_OPTION_SINGLE_OBJECT
-#include <ft2build.h>
 
-#include "cffcmap.c"
-#include "cffdrivr.c"
-#include "cffgload.c"
-#include "cffparse.c"
+#include <ft2build.h>
 #include "cffpic.c"
+#include "cffdrivr.c"
+#include "cffparse.c"
 #include "cffload.c"
 #include "cffobjs.c"
-
-#include "cf2arrst.c"
-#include "cf2blues.c"
-#include "cf2error.c"
-#include "cf2font.c"
-#include "cf2ft.c"
-#include "cf2hints.c"
-#include "cf2intrp.c"
-#include "cf2read.c"
-#include "cf2stack.c"
-
+#include "cffgload.c"
+#include "cffcmap.c"
 
 /* END */

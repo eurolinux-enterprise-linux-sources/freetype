@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    FreeType outline management (body).                                  */
 /*                                                                         */
-/*  Copyright 1996-2017 by                                                 */
+/*  Copyright 1996-2008, 2010, 2012 by                                     */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -26,7 +26,6 @@
 #include <ft2build.h>
 #include FT_OUTLINE_H
 #include FT_INTERNAL_OBJECTS_H
-#include FT_INTERNAL_CALC_H
 #include FT_INTERNAL_DEBUG_H
 #include FT_TRIGONOMETRY_H
 
@@ -42,7 +41,7 @@
 
 
   static
-  const FT_Outline  null_outline = { 0, 0, NULL, NULL, NULL, 0 };
+  const FT_Outline  null_outline = { 0, 0, 0, 0, 0, 0 };
 
 
   /* documentation is in ftoutln.h */
@@ -52,9 +51,8 @@
                         const FT_Outline_Funcs*  func_interface,
                         void*                    user )
   {
-#undef  SCALED
-#define SCALED( x )  ( ( (x) < 0 ? -( -(x) << shift )             \
-                                 :  (  (x) << shift ) ) - delta )
+#undef SCALED
+#define SCALED( x )  ( ( (x) << shift ) - delta )
 
     FT_Vector   v_last;
     FT_Vector   v_control;
@@ -74,11 +72,8 @@
     FT_Pos   delta;
 
 
-    if ( !outline )
-      return FT_THROW( Invalid_Outline );
-
-    if ( !func_interface )
-      return FT_THROW( Invalid_Argument );
+    if ( !outline || !func_interface )
+      return FT_Err_Invalid_Argument;
 
     shift = func_interface->shift;
     delta = func_interface->delta;
@@ -132,7 +127,7 @@
           v_start.x = ( v_start.x + v_last.x ) / 2;
           v_start.y = ( v_start.y + v_last.y ) / 2;
 
-       /* v_last = v_start; */
+          v_last = v_start;
         }
         point--;
         tags--;
@@ -280,18 +275,18 @@
       if ( error )
         goto Exit;
 
-      first = (FT_UInt)last + 1;
+      first = last + 1;
     }
 
     FT_TRACE5(( "FT_Outline_Decompose: Done\n", n ));
     return FT_Err_Ok;
 
   Exit:
-    FT_TRACE5(( "FT_Outline_Decompose: Error 0x%x\n", error ));
+    FT_TRACE5(( "FT_Outline_Decompose: Error %d\n", error ));
     return error;
 
   Invalid_Outline:
-    return FT_THROW( Invalid_Outline );
+    return FT_Err_Invalid_Outline;
   }
 
 
@@ -305,23 +300,16 @@
 
 
     if ( !anoutline || !memory )
-      return FT_THROW( Invalid_Argument );
+      return FT_Err_Invalid_Argument;
 
     *anoutline = null_outline;
-
-    if ( numContours < 0                  ||
-         (FT_UInt)numContours > numPoints )
-      return FT_THROW( Invalid_Argument );
-
-    if ( numPoints > FT_OUTLINE_POINTS_MAX )
-      return FT_THROW( Array_Too_Large );
 
     if ( FT_NEW_ARRAY( anoutline->points,   numPoints   ) ||
          FT_NEW_ARRAY( anoutline->tags,     numPoints   ) ||
          FT_NEW_ARRAY( anoutline->contours, numContours ) )
       goto Fail;
 
-    anoutline->n_points    = (FT_Short)numPoints;
+    anoutline->n_points    = (FT_UShort)numPoints;
     anoutline->n_contours  = (FT_Short)numContours;
     anoutline->flags      |= FT_OUTLINE_OWNER;
 
@@ -344,7 +332,7 @@
                   FT_Outline  *anoutline )
   {
     if ( !library )
-      return FT_THROW( Invalid_Library_Handle );
+      return FT_Err_Invalid_Library_Handle;
 
     return FT_Outline_New_Internal( library->memory, numPoints,
                                     numContours, anoutline );
@@ -366,7 +354,7 @@
 
       /* empty glyph? */
       if ( n_points == 0 && n_contours == 0 )
-        return FT_Err_Ok;
+        return 0;
 
       /* check point and contour counts */
       if ( n_points <= 0 || n_contours <= 0 )
@@ -388,11 +376,11 @@
         goto Bad;
 
       /* XXX: check the tags array */
-      return FT_Err_Ok;
+      return 0;
     }
 
   Bad:
-    return FT_THROW( Invalid_Argument );
+    return FT_Err_Invalid_Argument;
   }
 
 
@@ -405,24 +393,19 @@
     FT_Int  is_owner;
 
 
-    if ( !source || !target )
-      return FT_THROW( Invalid_Outline );
-
-    if ( source->n_points   != target->n_points   ||
+    if ( !source            || !target            ||
+         source->n_points   != target->n_points   ||
          source->n_contours != target->n_contours )
-      return FT_THROW( Invalid_Argument );
+      return FT_Err_Invalid_Argument;
 
     if ( source == target )
       return FT_Err_Ok;
 
-    if ( source->n_points )
-    {
-      FT_ARRAY_COPY( target->points, source->points, source->n_points );
-      FT_ARRAY_COPY( target->tags,   source->tags,   source->n_points );
-    }
+    FT_ARRAY_COPY( target->points, source->points, source->n_points );
 
-    if ( source->n_contours )
-      FT_ARRAY_COPY( target->contours, source->contours, source->n_contours );
+    FT_ARRAY_COPY( target->tags, source->tags, source->n_points );
+
+    FT_ARRAY_COPY( target->contours, source->contours, source->n_contours );
 
     /* copy all flags, except the `FT_OUTLINE_OWNER' one */
     is_owner      = target->flags & FT_OUTLINE_OWNER;
@@ -439,21 +422,20 @@
   FT_Outline_Done_Internal( FT_Memory    memory,
                             FT_Outline*  outline )
   {
-    if ( !outline )
-      return FT_THROW( Invalid_Outline );
-
-    if ( !memory )
-      return FT_THROW( Invalid_Argument );
-
-    if ( outline->flags & FT_OUTLINE_OWNER )
+    if ( memory && outline )
     {
-      FT_FREE( outline->points   );
-      FT_FREE( outline->tags     );
-      FT_FREE( outline->contours );
-    }
-    *outline = null_outline;
+      if ( outline->flags & FT_OUTLINE_OWNER )
+      {
+        FT_FREE( outline->points   );
+        FT_FREE( outline->tags     );
+        FT_FREE( outline->contours );
+      }
+      *outline = null_outline;
 
-    return FT_Err_Ok;
+      return FT_Err_Ok;
+    }
+    else
+      return FT_Err_Invalid_Argument;
   }
 
 
@@ -466,7 +448,7 @@
     /* check for valid `outline' in FT_Outline_Done_Internal() */
 
     if ( !library )
-      return FT_THROW( Invalid_Library_Handle );
+      return FT_Err_Invalid_Library_Handle;
 
     return FT_Outline_Done_Internal( library->memory, outline );
   }
@@ -586,13 +568,11 @@
       {
         char*  p = outline->tags + first;
         char*  q = outline->tags + last;
+        char   swap;
 
 
         while ( p < q )
         {
-          char  swap;
-
-
           swap = *p;
           *p   = *q;
           *q   = swap;
@@ -616,29 +596,27 @@
                      FT_Raster_Params*  params )
   {
     FT_Error     error;
+    FT_Bool      update = FALSE;
     FT_Renderer  renderer;
     FT_ListNode  node;
 
 
     if ( !library )
-      return FT_THROW( Invalid_Library_Handle );
+      return FT_Err_Invalid_Library_Handle;
 
-    if ( !outline )
-      return FT_THROW( Invalid_Outline );
-
-    if ( !params )
-      return FT_THROW( Invalid_Argument );
+    if ( !outline || !params )
+      return FT_Err_Invalid_Argument;
 
     renderer = library->cur_renderer;
     node     = library->renderers.head;
 
     params->source = (void*)outline;
 
-    error = FT_ERR( Cannot_Render_Glyph );
+    error = FT_Err_Cannot_Render_Glyph;
     while ( renderer )
     {
       error = renderer->raster_render( renderer->raster, params );
-      if ( !error || FT_ERR_NEQ( error, Cannot_Render_Glyph ) )
+      if ( !error || FT_ERROR_BASE( error ) != FT_Err_Cannot_Render_Glyph )
         break;
 
       /* FT_Err_Cannot_Render_Glyph is returned if the render mode   */
@@ -649,7 +627,13 @@
       /* format                                                */
       renderer = FT_Lookup_Renderer( library, FT_GLYPH_FORMAT_OUTLINE,
                                      &node );
+      update   = TRUE;
     }
+
+    /* if we changed the current renderer for the glyph image format */
+    /* we need to select it as the next current one                  */
+    if ( !error && update && renderer )
+      FT_Set_Renderer( library, renderer, 0, 0 );
 
     return error;
   }
@@ -666,9 +650,9 @@
 
 
     if ( !abitmap )
-      return FT_THROW( Invalid_Argument );
+      return FT_Err_Invalid_Argument;
 
-    /* other checks are delayed to `FT_Outline_Render' */
+    /* other checks are delayed to FT_Outline_Render() */
 
     params.target = abitmap;
     params.flags  = 0;
@@ -729,8 +713,7 @@
 #if 0
 
 #define FT_OUTLINE_GET_CONTOUR( outline, c, first, last )  \
-  do                                                       \
-  {                                                        \
+  do {                                                     \
     (first) = ( c > 0 ) ? (outline)->points +              \
                             (outline)->contours[c - 1] + 1 \
                         : (outline)->points;               \
@@ -911,12 +894,13 @@
                          FT_Pos       ystrength )
   {
     FT_Vector*  points;
-    FT_Int      c, first, last;
+    FT_Vector   v_prev, v_first, v_next, v_cur;
+    FT_Int      c, n, first;
     FT_Int      orientation;
 
 
     if ( !outline )
-      return FT_THROW( Invalid_Outline );
+      return FT_Err_Invalid_Argument;
 
     xstrength /= 2;
     ystrength /= 2;
@@ -927,7 +911,7 @@
     if ( orientation == FT_ORIENTATION_NONE )
     {
       if ( outline->n_contours )
-        return FT_THROW( Invalid_Argument );
+        return FT_Err_Invalid_Argument;
       else
         return FT_Err_Ok;
     }
@@ -937,98 +921,73 @@
     first = 0;
     for ( c = 0; c < outline->n_contours; c++ )
     {
-      FT_Vector  in, out, anchor, shift;
-      FT_Fixed   l_in, l_out, l_anchor = 0, l, q, d;
-      FT_Int     i, j, k;
+      FT_Vector  in, out, shift;
+      FT_Fixed   l_in, l_out, l, q, d;
+      int        last = outline->contours[c];
 
 
-      l_in = 0;
-      last = outline->contours[c];
+      v_first = points[first];
+      v_prev  = points[last];
+      v_cur   = v_first;
 
-      /* pacify compiler */
-      in.x = in.y = anchor.x = anchor.y = 0;
+      /* compute the incoming vector and its length */
+      in.x = v_cur.x - v_prev.x;
+      in.y = v_cur.y - v_prev.y;
+      l_in = FT_Vector_Length( &in );
 
-      /* Counter j cycles though the points; counter i advances only  */
-      /* when points are moved; anchor k marks the first moved point. */
-      for ( i = last, j = first, k = -1;
-            j != i && i != k;
-            j = j < last ? j + 1 : first )
+      for ( n = first; n <= last; n++ )
       {
-        if ( j != k )
-        {
-          out.x = points[j].x - points[i].x;
-          out.y = points[j].y - points[i].y;
-          l_out = (FT_Fixed)FT_Vector_NormLen( &out );
-
-          if ( l_out == 0 )
-            continue;
-        }
+        if ( n < last )
+          v_next = points[n + 1];
         else
+          v_next = v_first;
+
+        /* compute the outgoing vector and its length */
+        out.x = v_next.x - v_cur.x;
+        out.y = v_next.y - v_cur.y;
+        l_out = FT_Vector_Length( &out );
+
+        d = l_in * l_out + in.x * out.x + in.y * out.y;
+
+        /* shift only if turn is less then ~160 degrees */
+        if ( 16 * d > l_in * l_out )
         {
-          out   = anchor;
-          l_out = l_anchor;
-        }
+          /* shift components are aligned along bisector        */
+          /* and directed according to the outline orientation. */
+          shift.x = l_out * in.y + l_in * out.y;
+          shift.y = l_out * in.x + l_in * out.x;
 
-        if ( l_in != 0 )
-        {
-          if ( k < 0 )
-          {
-            k        = i;
-            anchor   = in;
-            l_anchor = l_in;
-          }
-
-          d = FT_MulFix( in.x, out.x ) + FT_MulFix( in.y, out.y );
-
-          /* shift only if turn is less than ~160 degrees */
-          if ( d > -0xF000L )
-          {
-            d = d + 0x10000L;
-
-            /* shift components along lateral bisector in proper orientation */
-            shift.x = in.y + out.y;
-            shift.y = in.x + out.x;
-
-            if ( orientation == FT_ORIENTATION_TRUETYPE )
-              shift.x = -shift.x;
-            else
-              shift.y = -shift.y;
-
-            /* restrict shift magnitude to better handle collapsing segments */
-            q = FT_MulFix( out.x, in.y ) - FT_MulFix( out.y, in.x );
-            if ( orientation == FT_ORIENTATION_TRUETYPE )
-              q = -q;
-
-            l = FT_MIN( l_in, l_out );
-
-            /* non-strict inequalities avoid divide-by-zero when q == l == 0 */
-            if ( FT_MulFix( xstrength, q ) <= FT_MulFix( l, d ) )
-              shift.x = FT_MulDiv( shift.x, xstrength, d );
-            else
-              shift.x = FT_MulDiv( shift.x, l, q );
-
-
-            if ( FT_MulFix( ystrength, q ) <= FT_MulFix( l, d ) )
-              shift.y = FT_MulDiv( shift.y, ystrength, d );
-            else
-              shift.y = FT_MulDiv( shift.y, l, q );
-          }
+          if ( orientation == FT_ORIENTATION_TRUETYPE )
+            shift.x = -shift.x;
           else
-            shift.x = shift.y = 0;
+            shift.y = -shift.y;
 
-          for ( ;
-                i != j;
-                i = i < last ? i + 1 : first )
-          {
-            points[i].x += xstrength + shift.x;
-            points[i].y += ystrength + shift.y;
-          }
+          /* threshold strength to better handle collapsing segments */
+          l = FT_MIN( l_in, l_out );
+          q = out.x * in.y - out.y * in.x;
+          if ( orientation == FT_ORIENTATION_TRUETYPE )
+            q = -q;
+
+          if ( FT_MulDiv( xstrength, q, l ) < d )
+            shift.x = FT_MulDiv( shift.x, xstrength, d );
+          else
+            shift.x = FT_MulDiv( shift.x, l, q );
+
+          
+          if ( FT_MulDiv( ystrength, q, l ) < d )
+            shift.y = FT_MulDiv( shift.y, ystrength, d );
+          else
+            shift.y = FT_MulDiv( shift.y, l, q );
         }
         else
-          i = j;
+          shift.x = shift.y = 0;
 
-        in   = out;
-        l_in = l_out;
+        outline->points[n].x = v_cur.x + xstrength + shift.x;
+        outline->points[n].y = v_cur.y + ystrength + shift.y;
+
+        in    = out;
+        l_in  = l_out;
+        v_cur = v_next;
       }
 
       first = last + 1;
@@ -1043,8 +1002,6 @@
   FT_EXPORT_DEF( FT_Orientation )
   FT_Outline_Get_Orientation( FT_Outline*  outline )
   {
-    FT_BBox     cbox;
-    FT_Int      xshift, yshift;
     FT_Vector*  points;
     FT_Vector   v_prev, v_cur;
     FT_Int      c, n, first;
@@ -1057,20 +1014,7 @@
     /* We use the nonzero winding rule to find the orientation.       */
     /* Since glyph outlines behave much more `regular' than arbitrary */
     /* cubic or quadratic curves, this test deals with the polygon    */
-    /* only that is spanned up by the control points.                 */
-
-    FT_Outline_Get_CBox( outline, &cbox );
-
-    /* Handle collapsed outlines to avoid undefined FT_MSB. */
-    if ( cbox.xMin == cbox.xMax || cbox.yMin == cbox.yMax )
-      return FT_ORIENTATION_NONE;
-
-    xshift = FT_MSB( (FT_UInt32)( FT_ABS( cbox.xMax ) |
-                                  FT_ABS( cbox.xMin ) ) ) - 14;
-    xshift = FT_MAX( xshift, 0 );
-
-    yshift = FT_MSB( (FT_UInt32)( cbox.yMax - cbox.yMin ) ) - 14;
-    yshift = FT_MAX( yshift, 0 );
+    /* only which is spanned up by the control points.                */
 
     points = outline->points;
 
@@ -1080,16 +1024,12 @@
       FT_Int  last = outline->contours[c];
 
 
-      v_prev.x = points[last].x >> xshift;
-      v_prev.y = points[last].y >> yshift;
+      v_prev = points[last];
 
       for ( n = first; n <= last; n++ )
       {
-        v_cur.x = points[n].x >> xshift;
-        v_cur.y = points[n].y >> yshift;
-
+        v_cur = points[n];
         area += ( v_cur.y - v_prev.y ) * ( v_cur.x + v_prev.x );
-
         v_prev = v_cur;
       }
 

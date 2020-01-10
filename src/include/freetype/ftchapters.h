@@ -1,7 +1,7 @@
 /***************************************************************************/
 /*                                                                         */
 /* This file defines the structure of the FreeType reference.              */
-/* It is used by the python script that generates the HTML files.          */
+/* It is used by the python script which generates the HTML files.         */
 /*                                                                         */
 /***************************************************************************/
 
@@ -15,7 +15,6 @@
 /*    General Remarks                                                      */
 /*                                                                         */
 /* <Sections>                                                              */
-/*    header_inclusion                                                     */
 /*    user_allocation                                                      */
 /*                                                                         */
 /***************************************************************************/
@@ -68,16 +67,13 @@
 /***************************************************************************/
 /*                                                                         */
 /* <Chapter>                                                               */
-/*    module_specific                                                      */
+/*    auto_hinter                                                          */
 /*                                                                         */
 /* <Title>                                                                 */
-/*    Controlling FreeType Modules                                         */
+/*    The Auto-Hinter                                                      */
 /*                                                                         */
 /* <Sections>                                                              */
 /*    auto_hinter                                                          */
-/*    cff_driver                                                           */
-/*    tt_driver                                                            */
-/*    pcf_driver                                                           */
 /*                                                                         */
 /***************************************************************************/
 
@@ -118,19 +114,5 @@
 /*    lzw                                                                  */
 /*    bzip2                                                                */
 /*    lcd_filtering                                                        */
-/*                                                                         */
-/***************************************************************************/
-
-/***************************************************************************/
-/*                                                                         */
-/* <Chapter>                                                               */
-/*    error_codes                                                          */
-/*                                                                         */
-/* <Title>                                                                 */
-/*    Error Codes                                                          */
-/*                                                                         */
-/* <Sections>                                                              */
-/*    error_enumerations                                                   */
-/*    error_code_values                                                    */
 /*                                                                         */
 /***************************************************************************/

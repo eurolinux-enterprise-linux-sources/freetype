@@ -6,8 +6,8 @@
 
 Summary: A free and portable font rendering engine
 Name: freetype
-Version: 2.8
-Release: 14%{?dist}
+Version: 2.4.11
+Release: 12%{?dist}
 License: (FTL or GPLv2+) and BSD and MIT and Public Domain and zlib with acknowledgement
 Group: System Environment/Libraries
 URL: http://www.freetype.org
@@ -16,44 +16,48 @@ Source1: http://download.savannah.gnu.org/releases/freetype/freetype-doc-%{versi
 Source2: http://download.savannah.gnu.org/releases/freetype/ft2demos-%{version}.tar.bz2
 Source3: ftconfig.h
 
-Patch0:  freetype-2.3.0-enable-spr.patch
+Patch21:  freetype-2.3.0-enable-spr.patch
 
 # Enable otvalid and gxvalid modules
-Patch1:  freetype-2.2.1-enable-valid.patch
+Patch46:  freetype-2.2.1-enable-valid.patch
+# Enable additional demos
+Patch47:  freetype-2.3.11-more-demos.patch
+
+# Fix multilib conflicts
+Patch88:  freetype-multilib.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=891457
+Patch89:  freetype-2.4.11-fix-emboldening.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1010341
+Patch90:  0001-Fix-vertical-size-of-emboldened-glyphs.patch
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1197740
-Patch2:  freetype-2.4.11-inode-overflow.patch
+Patch91:  freetype-2.4.11-CVE-2014-9657.patch
+Patch92:  freetype-2.4.11-CVE-2014-9658.patch
+Patch93:  freetype-2.4.11-ft-strncmp.patch
+Patch94:  freetype-2.4.11-CVE-2014-9675.patch
+Patch95:  freetype-2.4.11-CVE-2014-9660.patch
+Patch96:  freetype-2.4.11-CVE-2014-9661a.patch
+Patch97:  freetype-2.4.11-CVE-2014-9661b.patch
+Patch98:  freetype-2.4.11-CVE-2014-9663.patch
+Patch99:  freetype-2.4.11-CVE-2014-9664a.patch
+Patch100:  freetype-2.4.11-CVE-2014-9664b.patch
+Patch101:  freetype-2.4.11-CVE-2014-9667.patch
+Patch102:  freetype-2.4.11-CVE-2014-9669.patch
+Patch103:  freetype-2.4.11-CVE-2014-9670.patch
+Patch104:  freetype-2.4.11-CVE-2014-9671.patch
+Patch105:  freetype-2.4.11-CVE-2014-9673.patch
+Patch106:  freetype-2.4.11-CVE-2014-9674a.patch
+Patch107:  freetype-2.4.11-unsigned-long.patch
+Patch108:  freetype-2.4.11-CVE-2014-9674b.patch
+Patch109:  freetype-2.4.11-pcf-read-a.patch
+Patch110:  freetype-2.4.11-pcf-read-b.patch
+Patch111:  freetype-2.4.11-inode-overflow.patch
 
-# https://bugzilla.redhat.com/show_bug.cgi?id=1381678
-Patch3:  freetype-2.4.11-signed.patch
-
-# Enable additional demos
-Patch4:  freetype-2.3.11-more-demos.patch
-
-Patch5:  freetype-2.4.11-libtool.patch
-
-Patch6:  freetype-2.8-pcf-encoding.patch
-
-Patch7:  freetype-2.8-loop-counter.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1497443
-Patch8:  freetype-multilib.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1544775
-Patch9:  freetype-2.8-getvariation.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1576504
-Patch10:  freetype-2.8-2.4.11-API.patch
-Patch11:  freetype-2.8-avar-table-load.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1657479
-Patch12:  freetype-2.8-bw-rendering.patch
-Patch13:  freetype-2.8-bw-hinting.patch
+Buildroot: %{_tmppath}/%{name}-%{version}-root-%(%{__id_u} -n)
 
 BuildRequires: libX11-devel
-BuildRequires: libpng-devel
-BuildRequires: zlib-devel
-BuildRequires: bzip2-devel
 
 Provides: %{name}-bytecode
 %if %{?_with_subpixel_rendering:1}%{!?_with_subpixel_rendering:0}
@@ -85,7 +89,8 @@ small utilities showing various capabilities of the FreeType library.
 Summary: FreeType development libraries and header files
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
-Requires: pkgconfig%{?_isa}
+Requires: zlib-devel
+Requires: pkgconfig
 
 %description devel
 The freetype-devel package includes the static libraries and header files
@@ -99,36 +104,44 @@ FreeType.
 %setup -q -b 1 -a 2
 
 %if %{?_with_subpixel_rendering:1}%{!?_with_subpixel_rendering:0}
-%patch0  -p1 -b .enable-spr
+%patch21  -p1 -b .enable-spr
 %endif
 
-%patch1  -p1 -b .enable-valid
-%patch2  -p1 -b .inode-overflow
-%patch3  -p1 -b .signed
+%patch46  -p1 -b .enable-valid
 
 pushd ft2demos-%{version}
-%patch4  -p1 -b .more-demos
+%patch47  -p1 -b .more-demos
 popd
 
-%patch5 -p1 -b .libtool
-%patch6 -p1 -b .pcf-encoding
-%patch7 -p1 -b .loop-counter
-%patch8 -p1 -b .multilib
-%patch9 -p1 -b .getvariation
-%patch10 -p1 -b .2.4.11-api
-%patch11 -p1 -b .avar-table-load
-%patch12 -p1 -b .bw-rendering
-%patch13 -p1 -b .bw-hinting
+%patch88 -p1 -b .multilib
+%patch89 -p1 -b .emboldening
+%patch90 -p1 -b .emboldened-glyphs
+
+%patch91 -p1 -b .CVE-2014-9657
+%patch92 -p1 -b .CVE-2014-9658
+%patch93 -p1 -b .ft-strncmp
+%patch94 -p1 -b .CVE-2014-9675
+%patch95 -p1 -b .CVE-2014-9660
+%patch96 -p1 -b .CVE-2014-9661a
+%patch97 -p1 -b .CVE-2014-9661b
+%patch98 -p1 -b .CVE-2014-9663
+%patch99 -p1 -b .CVE-2014-9664a
+%patch100 -p1 -b .CVE-2014-9664b
+%patch101 -p1 -b .CVE-2014-9667
+%patch102 -p1 -b .CVE-2014-9669
+%patch103 -p1 -b .CVE-2014-9670
+%patch104 -p1 -b .CVE-2014-9671
+%patch105 -p1 -b .CVE-2014-9673
+%patch106 -p1 -b .CVE-2014-9674a
+%patch107 -p1 -b .unsigned-long
+%patch108 -p1 -b .CVE-2014-9674b
+%patch109 -p1 -b .pcf-read-a
+%patch110 -p1 -b .pcf-read-b
+%patch111 -p1 -b .inode-overflow
 
 %build
 
-%configure --disable-static \
-           --with-zlib=yes \
-           --with-bzip2=yes \
-           --with-png=yes \
-           --with-harfbuzz=no \
-           CFLAGS="%optflags -D_FILE_OFFSET_BITS=64"
-
+%configure --disable-static CFLAGS="%optflags -D_FILE_OFFSET_BITS=64"
 sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' builds/unix/libtool
 sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' builds/unix/libtool
 make %{?_smp_mflags}
@@ -153,8 +166,10 @@ popd
 
 
 %install
+rm -rf $RPM_BUILD_ROOT
 
-%make_install gnulocaledir=$RPM_BUILD_ROOT%{_datadir}/locale
+
+%makeinstall gnulocaledir=$RPM_BUILD_ROOT%{_datadir}/locale
 
 {
   for ftdemo in ftbench ftchkwd ftmemchk ftpatchk fttimer ftdump ftlint ftmemchk ftvalid ; do
@@ -179,6 +194,8 @@ install -p -m 644 %{SOURCE3} $RPM_BUILD_ROOT%{_includedir}/freetype2/freetype/co
 # Don't package static a or .la files
 rm -f $RPM_BUILD_ROOT%{_libdir}/*.{a,la}
 
+%clean
+rm -rf $RPM_BUILD_ROOT
 
 %triggerpostun -- freetype < 2.0.5-3
 {
@@ -195,12 +212,14 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/*.{a,la}
 %postun -p /sbin/ldconfig
 
 %files
-%{!?_licensedir:%global license %%doc}
-%license docs/LICENSE.TXT docs/FTL.TXT docs/GPLv2.TXT
+%defattr(-,root,root)
 %{_libdir}/libfreetype.so.*
 %doc README
+%doc docs/LICENSE.TXT docs/FTL.TXT docs/GPLv2.TXT
+%doc docs/CHANGES docs/VERSION.DLL docs/formats.txt docs/ft2faq.html
 
 %files demos
+%defattr(-,root,root)
 %{_bindir}/ftbench
 %{_bindir}/ftchkwd
 %{_bindir}/ftmemchk
@@ -208,6 +227,7 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/*.{a,la}
 %{_bindir}/fttimer
 %{_bindir}/ftdump
 %{_bindir}/ftlint
+%{_bindir}/ftmemchk
 %{_bindir}/ftvalid
 %if %{with_xfree86}
 %{_bindir}/ftdiff
@@ -215,15 +235,17 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/*.{a,la}
 %{_bindir}/ftgrid
 %{_bindir}/ftmulti
 %{_bindir}/ftstring
+%{_bindir}/fttimer
 %{_bindir}/ftview
 %endif
 %doc ChangeLog README
 
 %files devel
-%doc docs/CHANGES docs/formats.txt docs/ft2faq.html
+%defattr(-,root,root)
 %dir %{_includedir}/freetype2
 %{_datadir}/aclocal/freetype2.m4
 %{_includedir}/freetype2/*
+%{_includedir}/*.h
 %{_libdir}/libfreetype.so
 %{_bindir}/freetype-config
 %{_libdir}/pkgconfig/freetype2.pc
@@ -231,41 +253,8 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/*.{a,la}
 %doc docs/glyphs
 %doc docs/reference
 %doc docs/tutorial
-%{_mandir}/man1/*
 
 %changelog
-* Mon Mar 11 2019 Marek Kasik <mkasik@redhat.com> - 2.8-14
-- Fix rendering in monochrome mode
-- Resolves: #1657479
-
-* Tue Nov 13 2018 Marek Kasik <mkasik@redhat.com> - 2.8-13
-- Fix definition of constant ft_encoding_gb2312 in freetype.h
-- Resolves: #1645218
-
-* Fri Jun 08 2018 Marek Kasik <mkasik@redhat.com> - 2.8-12
-- Fix loading of avar tables
-- Resolves: #1576504
-
-* Thu Jun 07 2018 Marek Kasik <mkasik@redhat.com> - 2.8-11
-- Preserve API/ABI compatibility for public symbols
-- Resolves: #1576504
-
-* Wed Jun 06 2018 Richard Hughes <rhughes@redhat.com> - 2.8-10
-- Update to 2.8
-- Resolves: #1576504
-
-* Mon Feb 20 2017 Marek Kasik <mkasik@redhat.com> - 2.4.11-15
-- Fix shellcheck warning (coverity)
-- Related: #1368141
-
-* Mon Feb 20 2017 Marek Kasik <mkasik@redhat.com> - 2.4.11-14
-- Backport functions for reading signed values from stream
-- Resolves: #1381678
-
-* Fri Feb 17 2017 Marek Kasik <mkasik@redhat.com> - 2.4.11-13
-- Don't show path of non-existing libtool file
-- Resolves: #1368141
-
 * Tue Mar 22 2016 Marek Kasik <mkasik@redhat.com> - 2.4.11-12
 - Define _FILE_OFFSET_BITS=64 to handle inodes higher than or equal to 2^31
 - Resolves: #1303268

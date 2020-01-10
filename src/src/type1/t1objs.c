@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    Type 1 objects manager (body).                                       */
 /*                                                                         */
-/*  Copyright 1996-2017 by                                                 */
+/*  Copyright 1996-2009, 2011 by                                           */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -49,6 +49,9 @@
   /*                                                                       */
   /*                            SIZE FUNCTIONS                             */
   /*                                                                       */
+  /*  note that we store the global hints in the size's "internal" root    */
+  /*  field                                                                */
+  /*                                                                       */
   /*************************************************************************/
 
 
@@ -64,7 +67,7 @@
                             "pshinter" );
     return ( module && pshinter && pshinter->get_globals_funcs )
            ? pshinter->get_globals_funcs( module )
-           : 0;
+           : 0 ;
   }
 
 
@@ -74,16 +77,16 @@
     T1_Size  size = (T1_Size)t1size;
 
 
-    if ( t1size->internal->module_data )
+    if ( size->root.internal )
     {
       PSH_Globals_Funcs  funcs;
 
 
       funcs = T1_Size_Get_Globals_Funcs( size );
       if ( funcs )
-        funcs->destroy( (PSH_Globals)t1size->internal->module_data );
+        funcs->destroy( (PSH_Globals)size->root.internal );
 
-      t1size->internal->module_data = NULL;
+      size->root.internal = 0;
     }
   }
 
@@ -92,7 +95,7 @@
   T1_Size_Init( FT_Size  t1size )      /* T1_Size */
   {
     T1_Size            size  = (T1_Size)t1size;
-    FT_Error           error = FT_Err_Ok;
+    FT_Error           error = T1_Err_Ok;
     PSH_Globals_Funcs  funcs = T1_Size_Get_Globals_Funcs( size );
 
 
@@ -105,7 +108,7 @@
       error = funcs->create( size->root.face->memory,
                              &face->type1.private_dict, &globals );
       if ( !error )
-        t1size->internal->module_data = globals;
+        size->root.internal = (FT_Size_Internal)(void*)globals;
     }
 
     return error;
@@ -123,12 +126,12 @@
     FT_Request_Metrics( size->root.face, req );
 
     if ( funcs )
-      funcs->set_scale( (PSH_Globals)t1size->internal->module_data,
+      funcs->set_scale( (PSH_Globals)size->root.internal,
                         size->root.metrics.x_scale,
                         size->root.metrics.y_scale,
                         0, 0 );
 
-    return FT_Err_Ok;
+    return T1_Err_Ok;
   }
 
 
@@ -141,7 +144,7 @@
   FT_LOCAL_DEF( void )
   T1_GlyphSlot_Done( FT_GlyphSlot  slot )
   {
-    slot->internal->glyph_hints = NULL;
+    slot->internal->glyph_hints = 0;
   }
 
 
@@ -221,7 +224,7 @@
     }
 
     T1_Done_Blend( face );
-    face->blend = NULL;
+    face->blend = 0;
 #endif
 
     /* release font info strings */
@@ -243,9 +246,6 @@
 
     FT_FREE( type1->subrs );
     FT_FREE( type1->subrs_len );
-
-    ft_hash_num_free( type1->subrs_hash, memory );
-    FT_FREE( type1->subrs_hash );
 
     FT_FREE( type1->subrs_block );
     FT_FREE( type1->charstrings_block );
@@ -326,7 +326,7 @@
     if ( !psaux )
     {
       FT_ERROR(( "T1_Face_Init: cannot access `psaux' module\n" ));
-      error = FT_THROW( Missing_Module );
+      error = T1_Err_Missing_Module;
       goto Exit;
     }
 
@@ -345,10 +345,10 @@
       goto Exit;
 
     /* check the face index */
-    if ( ( face_index & 0xFFFF ) > 0 )
+    if ( face_index > 0 )
     {
       FT_ERROR(( "T1_Face_Init: invalid face index\n" ));
-      error = FT_THROW( Invalid_Argument );
+      error = T1_Err_Invalid_Argument;
       goto Exit;
     }
 
@@ -364,16 +364,19 @@
       root->num_glyphs = type1->num_glyphs;
       root->face_index = 0;
 
-      root->face_flags |= FT_FACE_FLAG_SCALABLE    |
-                          FT_FACE_FLAG_HORIZONTAL  |
-                          FT_FACE_FLAG_GLYPH_NAMES |
-                          FT_FACE_FLAG_HINTER;
+      root->face_flags = FT_FACE_FLAG_SCALABLE    |
+                         FT_FACE_FLAG_HORIZONTAL  |
+                         FT_FACE_FLAG_GLYPH_NAMES |
+                         FT_FACE_FLAG_HINTER;
 
       if ( info->is_fixed_pitch )
         root->face_flags |= FT_FACE_FLAG_FIXED_WIDTH;
 
       if ( face->blend )
         root->face_flags |= FT_FACE_FLAG_MULTIPLE_MASTERS;
+
+      /* XXX: TODO -- add kerning with .afm support */
+
 
       /* The following code to extract the family and the style is very   */
       /* simplistic and might get some things wrong.  For a full-featured */
@@ -454,7 +457,7 @@
 
       /* no embedded bitmap support */
       root->num_fixed_sizes = 0;
-      root->available_sizes = NULL;
+      root->available_sizes = 0;
 
       root->bbox.xMin =   type1->font_bbox.xMin            >> 16;
       root->bbox.yMin =   type1->font_bbox.yMin            >> 16;
@@ -486,7 +489,7 @@
         if ( !error )
           root->max_advance_width = (FT_Short)FIXED_TO_INT( max_advance );
         else
-          error = FT_Err_Ok;   /* clear error */
+          error = T1_Err_Ok;   /* clear error */
       }
 
       root->max_advance_height = root->height;
@@ -514,8 +517,7 @@
         charmap.encoding    = FT_ENCODING_UNICODE;
 
         error = FT_CMap_New( cmap_classes->unicode, NULL, &charmap, NULL );
-        if ( error                                      &&
-             FT_ERR_NEQ( error, No_Unicode_Glyph_Name ) )
+        if ( error && FT_Err_No_Unicode_Glyph_Name != error )
           goto Exit;
         error = FT_Err_Ok;
 
@@ -588,7 +590,7 @@
   {
     FT_UNUSED( driver );
 
-    return FT_Err_Ok;
+    return T1_Err_Ok;
   }
 
 
