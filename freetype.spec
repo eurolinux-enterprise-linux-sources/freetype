@@ -7,7 +7,7 @@
 Summary: A free and portable font rendering engine
 Name: freetype
 Version: 2.8
-Release: 12%{?dist}
+Release: 12%{?dist}.1
 License: (FTL or GPLv2+) and BSD and MIT and Public Domain and zlib with acknowledgement
 Group: System Environment/Libraries
 URL: http://www.freetype.org
@@ -228,6 +228,10 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/*.{a,la}
 %{_mandir}/man1/*
 
 %changelog
+* Thu Nov 22 2018 Marek Kasik <mkasik@redhat.com> - 2.8-12.el7_6.1
+- Fix definition of constant ft_encoding_gb2312 in freetype.h
+- Resolves: #1652187
+
 * Fri Jun 08 2018 Marek Kasik <mkasik@redhat.com> - 2.8-12
 - Fix loading of avar tables
 - Resolves: #1576504
